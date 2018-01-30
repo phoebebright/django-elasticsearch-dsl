@@ -13,7 +13,7 @@ class Search(DSLSearch):
         s._model = self._model
         return s
 
-    def to_queryset(self, keep_order=True):
+    def to_queryset(self, keep_order=True, all_results=False):
         """
         This method return a django queryset from the an elasticsearch result.
         It cost a query to the sql db.
@@ -25,7 +25,7 @@ class Search(DSLSearch):
             # We only need the meta fields with the models ids
             s = self.source(excludes=['*'])
 
-        pks = [result._id for result in s]
+        pks = [result._id for result in (s.scan() if all_results else s)]
 
         qs = self._model.objects.filter(pk__in=pks)
 
