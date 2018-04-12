@@ -83,9 +83,9 @@ ad_index = Index('test_ads').settings(**index_settings)
 
 @ad_index.doc_type
 class AdDocument(DocType):
-    description = fields.StringField(
+    description = fields.TextField(
         analyzer=html_strip,
-        fields={'raw': fields.StringField(index='not_analyzed')}
+        fields={'raw': fields.KeywordField()}
     )
 
     class Meta:
