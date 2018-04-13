@@ -1,10 +1,14 @@
 from collections import defaultdict
 from itertools import chain
+import logging
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.six import itervalues, iterkeys, iteritems
 
 from .apps import DEDConfig
+
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentRegistry(object):
@@ -42,15 +46,21 @@ class DocumentRegistry(object):
         if not DEDConfig.autosync_enabled():
             return
 
-        for doc in self._get_related_doc(instance):
-            doc_instance = doc()
-            try:
-                related = doc_instance.get_instances_from_related(instance)
-            except ObjectDoesNotExist:
-                related = None
+        try:
+            for doc in self._get_related_doc(instance):
+                doc_instance = doc()
+                try:
+                    related = doc_instance.get_instances_from_related(instance)
+                except ObjectDoesNotExist:
+                    related = None
 
-            if related is not None:
-                doc_instance.update(related, **kwargs)
+                if related is not None:
+                    doc_instance.update(related, **kwargs)
+        except Exception:
+            if not DEDConfig.autosync_silent_fail():
+                raise
+
+            logger.exception(u"Failed to auto-sync Elasticsearch document")
 
     def delete_related(self, instance, **kwargs):
         """
@@ -59,11 +69,17 @@ class DocumentRegistry(object):
         if not DEDConfig.autosync_enabled():
             return
 
-        for doc in self._get_related_doc(instance):
-            doc_instance = doc(related_instance_to_ignore=instance)
-            related = doc_instance.get_instances_from_related(instance)
-            if related is not None:
-                doc_instance.update(related, **kwargs)
+        try:
+            for doc in self._get_related_doc(instance):
+                doc_instance = doc(related_instance_to_ignore=instance)
+                related = doc_instance.get_instances_from_related(instance)
+                if related is not None:
+                    doc_instance.update(related, **kwargs)
+        except Exception:
+            if not DEDConfig.autosync_silent_fail():
+                raise
+
+            logger.exception(u"Failed to auto-sync Elasticsearch document")
 
     def update(self, instance, **kwargs):
         """
@@ -73,10 +89,16 @@ class DocumentRegistry(object):
         if not DEDConfig.autosync_enabled():
             return
 
-        if instance.__class__ in self._models:
-            for doc in self._models[instance.__class__]:
-                if not doc._doc_type.ignore_signals:
-                    doc().update(instance, **kwargs)
+        try:
+            if instance.__class__ in self._models:
+                for doc in self._models[instance.__class__]:
+                    if not doc._doc_type.ignore_signals:
+                        doc().update(instance, **kwargs)
+        except Exception:
+            if not DEDConfig.autosync_silent_fail():
+                raise
+
+            logger.exception(u"Failed to auto-sync Elasticsearch document")
 
     def delete(self, instance, **kwargs):
         """
