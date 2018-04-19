@@ -72,7 +72,11 @@ class DocumentRegistry(object):
         try:
             for doc in self._get_related_doc(instance):
                 doc_instance = doc(related_instance_to_ignore=instance)
-                related = doc_instance.get_instances_from_related(instance)
+                try:
+                    related = doc_instance.get_instances_from_related(instance)
+                except ObjectDoesNotExist:
+                    related = None
+
                 if related is not None:
                     doc_instance.update(related, **kwargs)
         except Exception:
