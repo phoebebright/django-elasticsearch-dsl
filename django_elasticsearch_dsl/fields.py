@@ -268,3 +268,12 @@ except ImportError:
             'Elasticsearch 6.',
             DeprecationWarning
         )
+
+# ES5+ has ScaledFloat field, ES 2 doesn't.
+try:
+    from elasticsearch_dsl.field import ScaledFloat
+
+    class ScaledFloatField(DEDField, ScaledFloat):
+        pass
+except ImportError:
+    pass
