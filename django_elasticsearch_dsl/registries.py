@@ -49,6 +49,8 @@ class DocumentRegistry(object):
                 related = doc_instance.get_instances_from_related(instance)
             except ObjectDoesNotExist:
                 related = None
+            except AttributeError:
+                related = None                
 
             if related is not None:
                 doc_instance.update(related, **kwargs)
@@ -65,6 +67,8 @@ class DocumentRegistry(object):
             try:
                 related = doc_instance.get_instances_from_related(instance)
             except ObjectDoesNotExist:
+                related = None
+            except AttributeError:
                 related = None
 
             if related is not None:
